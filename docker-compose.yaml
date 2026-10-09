@@ -1,0 +1,50 @@
+services:
+  api:
+    image: orbanbotond2002/lab2-fastapi:latest
+    container_name: fastapi_app
+    restart: always
+    networks:
+      - backend_network
+      - database_network
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mysql
+    restart: always
+    environment:
+      - MYSQL_DATABASE=lab_db
+      - MYSQL_USER=lab_user
+      - MYSQL_PASSWORD=lab_password
+      - MYSQL_ROOT_PASSWORD=root_password
+    networks:
+      - database_network
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+
+  caddy:
+    image: caddy:2
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+    networks:
+      - backend_network
+
+networks:
+  backend_network:
+  database_network:
+
+volumes:
+  db_data:
+  caddy_data:
+  caddy_config:
